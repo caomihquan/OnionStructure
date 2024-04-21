@@ -115,13 +115,13 @@ namespace Onion.Services.RoomServices
 
         public async Task<List<RoomLanguage>> GetRoomLanguages()
         {
-            var list = await _unitOfWork.ResponsitoryRoomLanguage.Get();
+            var list = await _unitOfWork.GetRepository<RoomLanguage>().GetAllAsync();
             return list.ToList();
         }
 
         public async Task<List<RoomLevel>> GetRoomLevel()
         {
-            var list = await _unitOfWork.ResponsitoryRoomLevel.Get();
+            var list = await _unitOfWork.GetRepository<RoomLevel>().GetAllAsync();
             return list.ToList();
         }
     }

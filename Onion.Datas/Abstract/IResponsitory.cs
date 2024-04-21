@@ -20,5 +20,7 @@ namespace Onion.Datas.Abstract
         Task<T> GetSingle(Expression<Func<T, bool>> expression);
         Task<T> GetByID(object id);
         Task<IEnumerable<T>> Get();
+
+
     }
 }

@@ -1,9 +1,9 @@
 using Alachisoft.NCache.Caching.Distributed;
 using Onion.Domains.Middleware;
+using Onion.Domains.SignalR;
 using Onion.Infrastructures.Configuration;
 using Onion.Services.SignalR;
 using OnionStructure.Configuration;
-using ProtoBuf.Extended.Meta;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.

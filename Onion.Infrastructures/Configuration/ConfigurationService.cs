@@ -32,11 +32,13 @@ namespace Onion.Infrastructures.Configuration
             service.AddSingleton<UserShareScreenTracker>();
 
             service.AddScoped(typeof(IResponsitory<>), typeof(Responsitory<>));
+            service.AddScoped(typeof(IRepositoryGeneric<>), typeof(RepositoryGeneric<>));
             service.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
             service.AddScoped<IDapperHelper,DapperHelper>();
             service.AddScoped<IUserService,UserService>();
             service.AddScoped<IRoomServices,RoomServices>();
             service.AddScoped<ITokenHandler,TokenHandler>();
+            service.AddTransient<IUserReponsitory, UserRepository>();
             service.AddSingleton<IDistributedCacheService, DistributedCacheService>();
 
         }

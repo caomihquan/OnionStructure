@@ -1,27 +1,40 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Onion.Datas;
+using Onion.Datas.Abstract;
 using Onion.Domains.Entities;
-using Onion.Domains.Models;
 using Onion.Domains.Extension;
-using Onion.Services.UserServices;
+using Onion.Domains.Models;
 using Onion.Services.RoomServices;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
+using Onion.Services.SignalR;
+using Onion.Services.UserServices;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
+namespace Onion.Domains.SignalR
 {
-    [EnableCors("CorsApi")]
-    [Authorize]
     public class ChatHub : Hub
     {
+        //IMapper _mapper;
+        IHubContext<PresenceHub> _presenceHub;
+        PresenceTracker _presenceTracker;
+        UserShareScreenTracker _shareScreenTracker;
+        IUserService _userService;
+        IRoomServices _roomService;
+        IUnitOfWork _unitOfWork;
 
+        public ChatHub(IUnitOfWork unitOfWork,UserShareScreenTracker shareScreenTracker, PresenceTracker presenceTracker, IHubContext<PresenceHub> presenceHub, IUserService userService,IRoomServices roomServices)
         {
             //_mapper = mapper;
             _unitOfWork = unitOfWork;
             _presenceTracker = presenceTracker;
             _presenceHub = presenceHub;
-            _presenceTracker = presenceTracker;
             _shareScreenTracker = shareScreenTracker;
             _userService = userService;
-            _roomService = roomService;
+            _roomService = roomServices;
         }
 
         public override async Task OnConnectedAsync()
@@ -36,9 +49,14 @@ using Microsoft.AspNetCore.Cors;
             await Groups.AddToGroupAsync(Context.ConnectionId, roomId);//khi user click vao room se join vao
             await AddConnectionToGroup(roomIdInt); // luu db DbSet<Connection> de khi disconnect biet
 
+            //var usersOnline = await _unitOfWork.UserRepository.GetUsersOnlineAsync(currentUsers);
+            var oneUserOnline = _unitOfWork.GetService<IUserService, User>().GetMemberAsync(username);
+            //var oneUserOnline = _unitOfWork.GetService<IUserReponsitory, User>().getUseryUserName(username);
             await Clients.Group(roomId).SendAsync("UserOnlineInGroup", oneUserOnline);
 
             var currentUsers = await _presenceTracker.GetOnlineUsers(roomIdInt);
+            await _roomService.UpdateCountMember(roomIdInt, currentUsers.Length);
+            //await _unitOfWork.Complete();
 
             var currentConnections = await _presenceTracker.GetConnectionsForUser(new UserConnectionInfo(username, roomIdInt));
             await _presenceHub.Clients.AllExcept(currentConnections).SendAsync("CountMemberInGroup",
@@ -65,10 +83,13 @@ using Microsoft.AspNetCore.Cors;
             if (isOffline)
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, group.RoomId.ToString());
+                var temp = await _userService.GetMemberAsync(username);
                 await Clients.Group(group.RoomId.ToString()).SendAsync("UserOfflineInGroup", temp);
 
                 var currentUsers = await _presenceTracker.GetOnlineUsers(group.RoomId);
 
+                await _roomService.UpdateCountMember(group.RoomId, currentUsers.Length);
+                //await _unitOfWork.Complete();
 
                 await _presenceHub.Clients.All.SendAsync("CountMemberInGroup",
                        new { roomId = group.RoomId, countMember = currentUsers.Length });
@@ -79,7 +100,8 @@ using Microsoft.AspNetCore.Cors;
         public async Task SendMessage(CreateMessageDto createMessageDto)
         {
             var userName = Context.User.GetUsername();
-
+            var sender = await _userService.GetMemberAsync(userName);
+            var group = await _roomService.GetRoomForConnection(Context.ConnectionId);
 
             if (group != null)
             {
@@ -99,6 +121,7 @@ using Microsoft.AspNetCore.Cors;
 
         public async Task MuteMicro(bool muteMicro)
         {
+            var group = await _roomService.GetRoomForConnection(Context.ConnectionId);
             if (group != null)
             {
                 await Clients.Group(group.RoomId.ToString()).SendAsync("OnMuteMicro", new { username = Context.User.GetUsername(), mute = muteMicro });
@@ -111,6 +134,7 @@ using Microsoft.AspNetCore.Cors;
 
         public async Task MuteCamera(bool muteCamera)
         {
+            var group = await _roomService.GetRoomForConnection(Context.ConnectionId);
             if (group != null)
             {
                 await Clients.Group(group.RoomId.ToString()).SendAsync("OnMuteCamera", new { username = Context.User.GetUsername(), mute = muteCamera });
@@ -145,17 +169,27 @@ using Microsoft.AspNetCore.Cors;
 
         private async Task<Room> RemoveConnectionFromGroup()
         {
+            var group = await _roomService.GetRoomForConnection(Context.ConnectionId);
             var connection = group.Connections.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            _roomService.RemoveConnection(connection);
+
+            //if (await _unitOfWork.Complete()) 
+                return group;
+
             throw new HubException("Fail to remove connection from room");
         }
 
         private async Task<Room> AddConnectionToGroup(int roomId)
         {
+            var group = await _roomService.GetRoomById(roomId);
             var connection = new Connection(Context.ConnectionId, Context.User.GetUsername());
             if (group != null)
             {
                 group.Connections.Add(connection);
             }
+
+            //if (await _unitOfWork.Complete()) 
+                return group;
 
             throw new HubException("Failed to add connection to room");
         }
