@@ -14,7 +14,7 @@ namespace Onion.Domains.Entities
         public DateTime ExpiredRefreshToken { get; set; }
         public string CodeRefreshToken { get; set; }
 
-        public string UserID { get; set; }
+        public Guid UserID { get; set; }
 
     }
 }

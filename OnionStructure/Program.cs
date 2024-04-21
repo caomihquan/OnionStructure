@@ -1,6 +1,9 @@
 using Alachisoft.NCache.Caching.Distributed;
+using Onion.Domains.Middleware;
 using Onion.Infrastructures.Configuration;
+using Onion.Services.SignalR;
 using OnionStructure.Configuration;
+using ProtoBuf.Extended.Meta;
 
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
@@ -24,15 +27,20 @@ builder.Services.AddTokenBear(builder.Configuration);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen();
 var MyAllowSpecificOrigins = "CorsApi";
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
+    options.AddPolicy(name:MyAllowSpecificOrigins,
                       policy =>
                       {
-                          policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod(); ;
+                          policy.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod().AllowCredentials();
                       });
+});
+builder.Services.AddSignalR(e =>
+{
+    e.EnableDetailedErrors = true;
 });
 //end
 
@@ -44,11 +52,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseMiddleware<ExceptionMiddleware>();
+app.UseRouting();
 app.UseCors(MyAllowSpecificOrigins);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<PresenceHub>("hubs/presence");
+    endpoints.MapHub<ChatHub>("hubs/chathub");
+    endpoints.MapControllers();
+    //endpoints.MapFallbackToController("Index", "Fallback");//publish
+});
 
 app.Run();

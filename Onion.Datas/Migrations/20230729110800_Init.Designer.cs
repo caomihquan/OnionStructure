@@ -12,90 +12,91 @@ using Onion.Datas;
 namespace Onion.Datas.Migrations
 {
     [DbContext(typeof(OnionDbContext))]
-    [Migration("20230702053038_updateCodeRefresh1")]
-    partial class updateCodeRefresh1
+    [Migration("20230729110800_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.8")
+                .HasAnnotation("ProductVersion", "7.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Onion.Domains.Entities.Category", b =>
+            modelBuilder.Entity("Onion.Domains.Entities.Connection", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("ConnectionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("RoomId")
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CategoryName")
-                        .IsRequired()
+                    b.Property<string>("UserName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                    b.HasKey("ConnectionId");
 
-                    b.HasKey("Id");
+                    b.HasIndex("RoomId");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Connections");
                 });
 
-            modelBuilder.Entity("Onion.Domains.Entities.Product", b =>
+            modelBuilder.Entity("Onion.Domains.Entities.Room", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("RoomId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoomId"));
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("CountMember")
+                        .HasColumnType("int");
 
-                    b.Property<string>("ProductName")
-                        .IsRequired()
+                    b.Property<string>("RoomName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.ToTable("Products");
+                    b.HasKey("RoomId");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("Rooms");
                 });
 
             modelBuilder.Entity("Onion.Domains.Entities.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("UserID")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("DisplayName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastActive")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("LastLoggedIn")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserID")
-                        .IsRequired()
+                    b.Property<string>("PhotoUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserID");
 
                     b.ToTable("Users");
                 });
@@ -109,11 +110,9 @@ namespace Onion.Datas.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AccessToken")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CodeRefreshToken")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
@@ -126,16 +125,42 @@ namespace Onion.Datas.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("RefreshToken")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("UserID")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.ToTable("UserTokens");
+                });
+
+            modelBuilder.Entity("Onion.Domains.Entities.Connection", b =>
+                {
+                    b.HasOne("Onion.Domains.Entities.Room", null)
+                        .WithMany("Connections")
+                        .HasForeignKey("RoomId");
+                });
+
+            modelBuilder.Entity("Onion.Domains.Entities.Room", b =>
+                {
+                    b.HasOne("Onion.Domains.Entities.User", "User")
+                        .WithMany("Rooms")
+                        .HasForeignKey("UserID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Onion.Domains.Entities.Room", b =>
+                {
+                    b.Navigation("Connections");
+                });
+
+            modelBuilder.Entity("Onion.Domains.Entities.User", b =>
+                {
+                    b.Navigation("Rooms");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,7 +5,8 @@ using Onion.Authentication.Service;
 using Onion.Cache.Cache;
 using Onion.Datas;
 using Onion.Datas.Abstract;
-using Onion.Services.CategoryService;
+using Onion.Services.RoomServices;
+using Onion.Services.SignalR;
 using Onion.Services.UserServices;
 using System;
 using System.Collections.Generic;
@@ -27,12 +28,17 @@ namespace Onion.Infrastructures.Configuration
 
         public static void RegisterDI(this IServiceCollection service)
         {
+            service.AddSingleton<PresenceTracker>();
+            service.AddSingleton<UserShareScreenTracker>();
+
             service.AddScoped(typeof(IResponsitory<>), typeof(Responsitory<>));
+            service.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
             service.AddScoped<IDapperHelper,DapperHelper>();
-            service.AddScoped<ICategoryService,CategoryService>();
             service.AddScoped<IUserService,UserService>();
+            service.AddScoped<IRoomServices,RoomServices>();
             service.AddScoped<ITokenHandler,TokenHandler>();
             service.AddSingleton<IDistributedCacheService, DistributedCacheService>();
+
         }
     }
 }

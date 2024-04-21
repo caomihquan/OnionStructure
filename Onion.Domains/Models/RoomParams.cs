@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Onion.Domains.Entities
+namespace Onion.Domains.Models
 {
-    public class Product : BaseEntity
+    internal class RoomParams
     {
-        public string ProductName { get; set; } = string.Empty;
     }
 }

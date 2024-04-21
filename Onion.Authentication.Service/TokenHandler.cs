@@ -35,10 +35,9 @@ namespace Onion.Authentication.Service
                 new Claim(JwtRegisteredClaimNames.Iat,DateTime.UtcNow.ToString(),ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
                 new Claim(JwtRegisteredClaimNames.Aud,"Admin",ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
                 new Claim(JwtRegisteredClaimNames.Exp,dateExpiry.ToString("yyyy/MM/dd hh:mm:ss"),ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
-                //new Claim(ClaimTypes.NameIdentifier,Guid.NewGuid().ToString(),ClaimValueTypes.String,""),
-                new Claim(ClaimTypes.Name,Guid.NewGuid().ToString(),ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
+                new Claim(ClaimTypes.Name,user.UserName,ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
                 new Claim("UserID",user.UserID.ToString(),ClaimValueTypes.String,_configuration["JWTToken:Issuer"]),
-
+                new Claim(ClaimTypes.NameIdentifier,user.UserID.ToString(),ClaimValueTypes.String,_configuration["JWTToken:Issuer"])
             };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWTToken:SignatureKey"]));
 
